@@ -14,7 +14,7 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("Email Campaign Manager - Safe Sender")
-        self.geometry("900x700")
+        self.geometry("900x750") # Increased height slightly
 
         self.config = config_manager.load_config()
         self.running = False
@@ -53,8 +53,24 @@ class App(ctk.CTk):
         self.entry_pass.insert(0, self.config.get("app_password", ""))
         self.entry_pass.pack(pady=5)
 
+        # --- NEW: Delay Settings Section ---
+        ctk.CTkLabel(frame, text="Random Delay Range (Seconds):").pack(pady=(15, 5))
+        delay_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        delay_frame.pack()
+        
+        self.entry_min = ctk.CTkEntry(delay_frame, width=60, placeholder_text="Min")
+        self.entry_min.insert(0, str(self.config.get("min_delay", 30)))
+        self.entry_min.pack(side="left", padx=5)
+
+        ctk.CTkLabel(delay_frame, text="-").pack(side="left")
+
+        self.entry_max = ctk.CTkEntry(delay_frame, width=60, placeholder_text="Max")
+        self.entry_max.insert(0, str(self.config.get("max_delay", 90)))
+        self.entry_max.pack(side="left", padx=5)
+        # -----------------------------------
+
         # Limits
-        ctk.CTkLabel(frame, text="Daily Limit (Emails):").pack(pady=5)
+        ctk.CTkLabel(frame, text="Daily Limit (Emails):").pack(pady=(15, 5))
         self.entry_limit = ctk.CTkEntry(frame, width=100)
         self.entry_limit.insert(0, str(self.config.get("daily_limit", 50)))
         self.entry_limit.pack(pady=5)
@@ -140,6 +156,14 @@ class App(ctk.CTk):
         self.config["daily_limit"] = self.entry_limit.get()
         self.config["session_times"] = self.entry_sessions.get()
         
+        # Save Custom Delay
+        try:
+            self.config["min_delay"] = int(self.entry_min.get())
+            self.config["max_delay"] = int(self.entry_max.get())
+        except ValueError:
+            messagebox.showerror("Error", "Delay values must be numbers.")
+            return
+
         active_days = [v.get() for k, v in self.days_vars.items() if v.get() != ""]
         self.config["active_days"] = active_days
 
@@ -249,8 +273,11 @@ class App(ctk.CTk):
                     config_manager.increment_daily_count()
                     self.log(f"SUCCESS: Sent to {recipient['email']}")
 
-                    # Throttling (Wait 30-90s)
-                    scheduler.perform_throttle_delay(self.log)
+                    # --- NEW: Custom Throttling ---
+                    min_d = int(current_config.get("min_delay", 30))
+                    max_d = int(current_config.get("max_delay", 90))
+                    scheduler.perform_throttle_delay(self.log, min_d, max_d)
+                    # ------------------------------
 
                 except Exception as e:
                     self.log(f"CRITICAL ERROR sending to {recipient['email']}: {str(e)}")

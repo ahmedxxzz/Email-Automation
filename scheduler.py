@@ -44,8 +44,13 @@ def check_session_time(config):
 
     return False, "Current time is outside defined sessions."
 
-def perform_throttle_delay(log_callback):
-    """Sleeps for random 30-90 seconds."""
-    delay = random.uniform(30, 90)
+# UPDATED: Accepts custom min and max
+def perform_throttle_delay(log_callback, min_delay=30, max_delay=90):
+    """Sleeps for random seconds between min and max."""
+    # Safety check to prevent crash if user puts Min > Max
+    if min_delay > max_delay:
+        min_delay, max_delay = max_delay, min_delay
+        
+    delay = random.uniform(float(min_delay), float(max_delay))
     log_callback(f"Throttling: Sleeping for {int(delay)} seconds...")
     time.sleep(delay)

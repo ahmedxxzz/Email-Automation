@@ -4,11 +4,14 @@ from datetime import datetime
 
 CONFIG_FILE = "config.json"
 
+# ADDED: min_delay and max_delay defaults
 DEFAULT_CONFIG = {
     "app_password": "",
     "sender_email": "",
     "daily_limit": 50,
     "current_daily_count": 0,
+    "min_delay": 30,
+    "max_delay": 90,
     "last_run_date": "",
     "active_days": ["Mon", "Tue", "Wed", "Thu", "Fri"],
     "session_times": "09:00-12:00, 14:00-17:00",
@@ -27,6 +30,10 @@ def load_config():
     with open(CONFIG_FILE, "r") as f:
         config = json.load(f)
     
+    # Ensure new keys exist if loading an old config file
+    if "min_delay" not in config: config["min_delay"] = 30
+    if "max_delay" not in config: config["max_delay"] = 90
+
     # Check Daily Reset Logic
     today_str = datetime.now().strftime("%Y-%m-%d")
     if config.get("last_run_date") != today_str:
